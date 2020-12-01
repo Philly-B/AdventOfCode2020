@@ -1,4 +1,4 @@
-package day._1;
+package days;
 
 import java.util.HashSet;
 import java.util.List;
@@ -7,7 +7,7 @@ import java.util.Set;
 import datastructures.IntPair;
 import general.Helper;
 
-public class Day1 {
+public class Day01 {
 
 	public static void main(String[] args) {
 
