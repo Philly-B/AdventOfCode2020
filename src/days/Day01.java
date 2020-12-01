@@ -11,7 +11,7 @@ public class Day01 {
 
 	public static void main(String[] args) {
 
-		List<String> lines = Helper.readFile("./data/day_1/part1.txt");
+		List<String> lines = Helper.readFile("./data/days/day01p1.txt");
 		int[] numbers = convertLines(lines);
 		solvePart1(numbers);
 		solvePart2(numbers);
@@ -53,7 +53,9 @@ public class Day01 {
 	private static IntPair solve(int[] numbers, int start, int goal) {
 
 		Set<Integer> seen = new HashSet<>(numbers.length);
-		for (int num = start; num < numbers.length; num++) {
+		int num;
+		for (int i = start; i < numbers.length; i++) {
+			num = numbers[i];
 			if (seen.contains(goal - num)) {
 				return new IntPair(num, goal - num);
 			}
