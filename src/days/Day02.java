@@ -1,10 +1,13 @@
 package days;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class Day02 {
 
 	public static void main(String[] args) {
 
-		java.util.List<String> lines = general.Helper.readFile("./data/days/day02p1.txt");
+		List<String> lines = general.Helper.readFile("./data/days/day02p1.txt");
 		solvePart1(lines);
 		solvePart2(lines);
 	}
@@ -14,7 +17,7 @@ public class Day02 {
 		int valid = 0;
 		int[] counts = new int[26];
 		for (String line : lines) {
-			java.util.Arrays.fill(counts, 0);
+			Arrays.fill(counts, 0);
 
 			String[] parts = line.split(":");
 			String[] validationParts = parts[0].split(" ");
