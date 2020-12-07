@@ -45,6 +45,13 @@ public class Day07 {
 
 		solvePart1(reverseGraph);
 
+		solvePart2(graph);
+
+	}
+
+
+	private static void solvePart2(Map<String, List<BagPair>> graph) {
+
 		Queue<String> q = new LinkedList<>();
 		q.add(SHINY_GOLD);
 		Map<String, Integer> seen = new HashMap<>();
@@ -52,7 +59,6 @@ public class Day07 {
 		int goldNeeds = runDfs(graph, seen, SHINY_GOLD);
 
 		Helper.printResultPart2(String.valueOf(goldNeeds));
-
 	}
 
 
