@@ -12,11 +12,6 @@ public class Day13 {
 
 		List<String> input = Helper.readFile("./data/days/day13p1.txt");
 
-		for (int i=0; i < 50; i++) {
-			if ((17 * i + 2) % 13 == 0)
-				System.out.println(17*i + " " + i);
-		}
-
 		solvePart1(input);
 		runPart2Examples();
 		runPart2(input.get(1));
