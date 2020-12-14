@@ -8,7 +8,7 @@ public class Day24 {
 
 	public static void main(String[] args) {
 
-		List<String> input = Helper.readFile("./data/days/day14p1.txt");
+		List<String> input = Helper.readFile("./data/days/day24p1.txt");
 	}
 
 
