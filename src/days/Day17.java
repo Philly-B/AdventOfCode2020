@@ -16,7 +16,7 @@ public class Day17 {
 		int numberOfActivePointsPart1 = solve(input, false);
 		Helper.printResultPart1(String.valueOf(numberOfActivePointsPart1));
 		int numberOfActivePointsPart2 = solve(input, true);
-		Helper.printResultPart1(String.valueOf(numberOfActivePointsPart2));
+		Helper.printResultPart2(String.valueOf(numberOfActivePointsPart2));
 	}
 
 
