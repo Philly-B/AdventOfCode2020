@@ -24,10 +24,8 @@ public class Day17 {
 
 		Set<Point> points = new HashSet<>();
 
-		int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
-		int minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE;
-		int minZ = 0, maxZ = 0;
-		int minW = 0, maxW = 0;
+		Point minValues = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE, 0, 0);
+		Point maxValues = new Point(Integer.MIN_VALUE, Integer.MIN_VALUE, 0, 0);
 
 		for (int x = 0; x < input.size(); x++) {
 			char[] row = input.get(x).toCharArray();
@@ -35,45 +33,42 @@ public class Day17 {
 				if (row[y] == '#') {
 					Point p = new Point(x, y, 0, 0);
 					points.add(p);
-					minX = Math.min(p.x, minX);
-					minY = Math.min(p.y, minY);
-					maxX = Math.max(p.x, maxX);
-					maxY = Math.max(p.y, maxY);
+					minValues.x = Math.min(p.x, minValues.x);
+					minValues.y = Math.min(p.y, minValues.y);
+					maxValues.x = Math.max(p.x, maxValues.x);
+					maxValues.y = Math.max(p.y, maxValues.y);
 				}
 			}
 		}
 
 		for (int cycle = 0; cycle < 6; cycle++) {
-			Set<Point> thisCyclesPoints = new HashSet<>();
+			points = calculateNextCycle(enable4thDim, points, minValues, maxValues);
+		}
+		return points.size();
+	}
 
-			minX--;
-			minY--;
-			minZ--;
-			maxX++;
-			maxY++;
-			maxZ++;
-			if (enable4thDim) {
-				minW--;
-				maxW++;
-			}
 
-			for (int x = minX; x <= maxX; x++) {
-				for (int y = minY; y <= maxY; y++) {
-					for (int z = minZ; z <= maxZ; z++) {
-						for (int w = minW; w <= maxW; w++) {
-							Point currentP = new Point(x, y, z, w);
-							int neigh = countNeighbors(points, currentP, enable4thDim);
-							if (neigh == 3 ||
-									points.contains(currentP) && neigh == 2) {
-								thisCyclesPoints.add(currentP);
-							}
+	private static Set<Point> calculateNextCycle(boolean enable4thDim, Set<Point> points, Point minValues, Point maxValues) {
+
+		Set<Point> nextCyclesPoints = new HashSet<>();
+
+		minValues.addDelteToEveryPoint(-1, enable4thDim);
+		maxValues.addDelteToEveryPoint(1, enable4thDim);
+
+		for (int x = minValues.x; x <= maxValues.x; x++) {
+			for (int y = minValues.y; y <= maxValues.y; y++) {
+				for (int z = minValues.z; z <= maxValues.z; z++) {
+					for (int w = minValues.w; w <= maxValues.w; w++) {
+						Point currentP = new Point(x, y, z, w);
+						int neigh = countNeighbors(points, currentP, enable4thDim);
+						if (neigh == 3 || points.contains(currentP) && neigh == 2) {
+							nextCyclesPoints.add(currentP);
 						}
 					}
 				}
 			}
-			points = thisCyclesPoints;
 		}
-		return points.size();
+		return nextCyclesPoints;
 	}
 
 
@@ -123,6 +118,17 @@ public class Day17 {
 			this.y = y;
 			this.z = z;
 			this.w = w;
+		}
+
+
+		public void addDelteToEveryPoint(int delta, boolean wAsWell) {
+
+			x += delta;
+			y += delta;
+			z += delta;
+			if (wAsWell) {
+				w += delta;
+			}
 		}
 
 
