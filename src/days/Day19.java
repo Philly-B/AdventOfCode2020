@@ -2,11 +2,8 @@ package days;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import general.Helper;
 
@@ -21,18 +18,18 @@ public class Day19 {
 
 		parseInput(input, rules, wordsToMatch);
 
-		int resultPart1 = solvePart1(rules, wordsToMatch);
+		int resultPart1 = solve(rules, wordsToMatch);
 		Helper.printResultPart1(String.valueOf(resultPart1));
 
 		rules.put(8, "42 | 42 8");
 		rules.put(11, "42 31 | 42 11 31");
 
-		int resultPart2 = solvePart1(rules, wordsToMatch);
+		int resultPart2 = solve(rules, wordsToMatch);
 		Helper.printResultPart2(String.valueOf(resultPart2));
 	}
 
 
-	private static int solvePart1(Map<Integer, String> rules, List<String> wordsToMatch) {
+	private static int solve(Map<Integer, String> rules, List<String> wordsToMatch) {
 
 		int matchesTheRule = 0;
 		for (String wordToMatch: wordsToMatch) {
