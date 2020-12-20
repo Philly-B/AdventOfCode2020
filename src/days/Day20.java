@@ -30,8 +30,6 @@ public class Day20 {
 
 		Image[][] gridOfImageIds = buildActualGridOfImages(imageIDToImage, imageIdToNeigh);
 
-
-		// todo build grid
 		// todo find rotation that fits
 		// todo remove all borders
 		// create one big image
@@ -42,29 +40,110 @@ public class Day20 {
 	private static Image[][] buildActualGridOfImages(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh) {
 
 		int numberOfImagesPerRow = (int) Math.sqrt(imageIDToImage.size());
-		Image[][] gridOfImageIds  = new Image[numberOfImagesPerRow][numberOfImagesPerRow];
+		Image[][] gridOfImageIds = new Image[numberOfImagesPerRow][numberOfImagesPerRow];
 
-		long[] corners = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 2).toArray();
-		List<Long> borders = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 3).boxed().collect(Collectors.toList());
-		List<Long> midImage = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 4).boxed().collect(Collectors.toList());
+		Set<Integer> corners = getAllImagesWithNumberOfNeighAsIntSet(imageIdToNeigh, 2);
+		Set<Integer> borders = getAllImagesWithNumberOfNeighAsIntSet(imageIdToNeigh, 3);
+		Set<Integer> midImage = getAllImagesWithNumberOfNeighAsIntSet(imageIdToNeigh, 4);
 
-		gridOfImageIds[0][0] = imageIDToImage.get(corners[0]);
-		gridOfImageIds[0][IMAGE_SIZE-1] = imageIDToImage.get(corners[1]);
-		gridOfImageIds[IMAGE_SIZE-1][0] = imageIDToImage.get(corners[2]);
-		gridOfImageIds[IMAGE_SIZE-1][IMAGE_SIZE-1] = imageIDToImage.get(corners[3]);
+		int upperLeftCornerImageId = corners.iterator().next();
+
+		Set<Integer> alreadyPlaced = new HashSet<>();
+		setTopLeftCorner(imageIDToImage, imageIdToNeigh, gridOfImageIds, upperLeftCornerImageId, alreadyPlaced);
+		setTopAndBottomBorder(imageIDToImage, imageIdToNeigh,  gridOfImageIds, corners, borders, alreadyPlaced);
+		setBottomAndRightBorder(imageIDToImage, imageIdToNeigh,  gridOfImageIds, corners, borders, alreadyPlaced);
+		setRestOfImage(imageIDToImage, imageIdToNeigh,  gridOfImageIds, midImage, alreadyPlaced);
+
 		return gridOfImageIds;
+	}
+
+	private static void setRestOfImage(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh, Image[][] gridOfImageIds,
+			Set<Integer> midImage, Set<Integer> alreadyPlaced) {
+
+		for (int r1 = 1; r1 < gridOfImageIds.length -1; r1++) {
+			for (int c1 = 1; c1 < gridOfImageIds.length -1; c1++) {
+				Set<Integer> posNeigh = imageIdToNeigh.get(gridOfImageIds[r1 - 1][c1].imageId);
+				posNeigh.retainAll(imageIdToNeigh.get(gridOfImageIds[r1][c1 -1].imageId));
+				posNeigh.retainAll(midImage);
+				posNeigh.removeAll(alreadyPlaced);
+				gridOfImageIds[r1][c1] = imageIDToImage.get(posNeigh.iterator().next());
+				alreadyPlaced.add(gridOfImageIds[r1][c1].imageId);
+			}
+		}
+	}
+
+
+	private static void setTopLeftCorner(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh, Image[][] gridOfImageIds, int upperLeftCornerImageId,
+			Set<Integer> alreadyPlaced) {
+
+		gridOfImageIds[0][0] = imageIDToImage.get(upperLeftCornerImageId);
+		Integer[] neigh = imageIdToNeigh.get(gridOfImageIds[0][0].imageId).toArray(new Integer[0]);
+		gridOfImageIds[1][0] = imageIDToImage.get(neigh[0]);
+		gridOfImageIds[0][1] = imageIDToImage.get(neigh[1]);
+		alreadyPlaced.add(upperLeftCornerImageId);
+		alreadyPlaced.add(neigh[0]);
+		alreadyPlaced.add(neigh[1]);
+	}
+
+
+	private static void setBottomAndRightBorder(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh, Image[][] gridOfImageIds,
+			Set<Integer> corners, Set<Integer> borders, Set<Integer> alreadyPlaced) {
+
+		for (int i = 1; i < gridOfImageIds.length; i++) {
+			Set<Integer> posNeigh = imageIdToNeigh.get(gridOfImageIds[gridOfImageIds.length -1][i-1].imageId);
+			posNeigh.removeAll(alreadyPlaced);
+			Integer actualNeigh = posNeigh.stream().filter(id -> borders.contains(id) || corners.contains(id)).findAny().get();
+			gridOfImageIds[gridOfImageIds.length -1][i] = imageIDToImage.get(actualNeigh);
+			alreadyPlaced.add(actualNeigh);
+
+			if (i == gridOfImageIds.length -1 ) continue;
+
+			posNeigh = imageIdToNeigh.get(gridOfImageIds[i-1][gridOfImageIds.length -1].imageId);
+			posNeigh.removeAll(alreadyPlaced);
+			actualNeigh = posNeigh.stream().filter(id -> borders.contains(id) || corners.contains(id)).findAny().get();
+			gridOfImageIds[i][gridOfImageIds.length -1] = imageIDToImage.get(actualNeigh);
+			alreadyPlaced.add(actualNeigh);
+		}
+	}
+
+
+	private static void setTopAndBottomBorder(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh, Image[][] gridOfImageIds,
+			Set<Integer> corners, Set<Integer> borders, Set<Integer> alreadyPlaced) {
+
+		for (int i = 2; i < gridOfImageIds.length; i++) {
+			Set<Integer> posNeigh = imageIdToNeigh.get(gridOfImageIds[0][i - 1].imageId);
+			posNeigh.removeAll(alreadyPlaced);
+			Integer actualNeigh = posNeigh.stream().filter(id -> borders.contains(id) || corners.contains(id)).findAny().get();
+			gridOfImageIds[0][i] = imageIDToImage.get(actualNeigh);
+			alreadyPlaced.add(actualNeigh);
+
+			posNeigh = imageIdToNeigh.get(gridOfImageIds[i - 1][0].imageId);
+			posNeigh.removeAll(alreadyPlaced);
+			actualNeigh = posNeigh.stream().filter(id -> borders.contains(id) || corners.contains(id)).findAny().get();
+			gridOfImageIds[i][0] = imageIDToImage.get(actualNeigh);
+			alreadyPlaced.add(actualNeigh);
+		}
 	}
 
 
 	private static void resolvePart1(Map<Integer, Set<Integer>> imageIdToNeigh) {
 
 		long result = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 2)
-				.reduce(1, (l1,l2) -> l1 * l2);
-
+				.reduce(1, (l1, l2) -> l1 * l2);
 
 		Helper.printResultPart1(String.valueOf(result));
 	}
 
+
+	private static Set<Integer> getAllImagesWithNumberOfNeighAsIntSet(
+			Map<Integer, Set<Integer>> imageIdToNeigh,
+			int numberOfNeigh) {
+
+		return getAllImagesWithNumberOfNeigh(imageIdToNeigh,numberOfNeigh)
+				.boxed()
+				.map(Long::intValue)
+				.collect(Collectors.toSet());
+	}
 
 	private static LongStream getAllImagesWithNumberOfNeigh(
 			Map<Integer, Set<Integer>> imageIdToNeigh,
@@ -165,16 +244,26 @@ public class Day20 {
 		private boolean[][] binImg;
 		Set<String> allBorders = new HashSet<>();
 
+
 		public Image(int imageId, boolean[][] binImg) {
 
 			this.imageId = imageId;
 			this.binImg = binImg;
 		}
 
+
+		@Override
+		public String toString() {
+
+			return String.valueOf(imageId);
+		}
+
+
 		public void flipLeftRight() {
+
 			boolean tmp;
-			for (int r=0; r < IMAGE_SIZE; r++) {
-				for (int c=0; c < IMAGE_SIZE; c++) {
+			for (int r = 0; r < IMAGE_SIZE; r++) {
+				for (int c = 0; c < IMAGE_SIZE; c++) {
 					tmp = binImg[r][c];
 					binImg[r][c] = binImg[r][IMAGE_SIZE - 1 - c];
 					binImg[r][IMAGE_SIZE - 1 - c] = tmp;
@@ -182,10 +271,12 @@ public class Day20 {
 			}
 		}
 
+
 		public void flipTopBottom() {
+
 			boolean tmp;
-			for (int r=0; r < IMAGE_SIZE; r++) {
-				for (int c=0; c < IMAGE_SIZE; c++) {
+			for (int r = 0; r < IMAGE_SIZE; r++) {
+				for (int c = 0; c < IMAGE_SIZE; c++) {
 					tmp = binImg[r][c];
 					binImg[r][c] = binImg[IMAGE_SIZE - 1 - r][c];
 					binImg[IMAGE_SIZE - 1 - r][c] = tmp;
@@ -193,21 +284,25 @@ public class Day20 {
 			}
 		}
 
+
 		public void rotate90ToRight() {
+
 			boolean[][] newThing = new boolean[IMAGE_SIZE][IMAGE_SIZE];
-			for (int r=0; r < IMAGE_SIZE; r++) {
+			for (int r = 0; r < IMAGE_SIZE; r++) {
 				for (int c = 0; c < IMAGE_SIZE; c++) {
-					newThing[c][IMAGE_SIZE-1-r] = binImg[r][c];
+					newThing[c][IMAGE_SIZE - 1 - r] = binImg[r][c];
 				}
 			}
 			binImg = newThing;
 		}
 
+
 		public void removeBorders() {
-			boolean[][] newImg = new boolean[IMAGE_SIZE-2][IMAGE_SIZE-2];
-			for (int r=1; r < IMAGE_SIZE-1; r++) {
-				for (int c = 1; c < IMAGE_SIZE-1; c++) {
-					newImg[r-1][c-1] = binImg[r][c];
+
+			boolean[][] newImg = new boolean[IMAGE_SIZE - 2][IMAGE_SIZE - 2];
+			for (int r = 1; r < IMAGE_SIZE - 1; r++) {
+				for (int c = 1; c < IMAGE_SIZE - 1; c++) {
+					newImg[r - 1][c - 1] = binImg[r][c];
 				}
 			}
 			binImg = newImg;
