@@ -23,6 +23,69 @@ public class Day20 {
 		List<String> input = Helper.readFile("./data/days/day20p1.txt");
 		input.add("");
 
+		Map<Integer, Image> imageIDToImage = readInput(input);
+
+		Map<String, List<Image>> borderToImages = createMapOfBorders(imageIDToImage);
+
+		Map<Integer, Set<Integer>> imageIdToNeigh = createMapOfNeighbors(borderToImages);
+
+		resolvePart1(imageIdToNeigh);
+
+	}
+
+
+	private static void resolvePart1(Map<Integer, Set<Integer>> imageIdToNeigh) {
+
+		long result = 1;
+		Iterator<Map.Entry<Integer, Set<Integer>>> imgNeighIter = imageIdToNeigh.entrySet().iterator();
+		while (imgNeighIter.hasNext()) {
+			Map.Entry<Integer, Set<Integer>> next = imgNeighIter.next();
+			if (next.getValue().size() == 2) result *= next.getKey();
+		}
+		Helper.printResultPart1(String.valueOf(result));
+	}
+
+
+	private static Map<Integer, Set<Integer>> createMapOfNeighbors(Map<String, List<Image>> borderToImages) {
+
+		Map<Integer, Set<Integer>> imageIdToNeigh = new HashMap<>();
+		Iterator<Map.Entry<String, List<Image>>> iterator = borderToImages.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry<String, List<Image>> next = iterator.next();
+			List<Image> neightbors = next.getValue();
+			if (neightbors.size() == 1) {
+				iterator.remove();
+				continue;
+			}
+
+			if (neightbors.size() != 2) {
+				throw new IllegalArgumentException();
+			}
+
+			imageIdToNeigh.putIfAbsent(neightbors.get(0).imageId, new HashSet<>());
+			imageIdToNeigh.get(neightbors.get(0).imageId).add(neightbors.get(1).imageId);
+			imageIdToNeigh.putIfAbsent(neightbors.get(1).imageId, new HashSet<>());
+			imageIdToNeigh.get(neightbors.get(1).imageId).add(neightbors.get(0).imageId);
+		}
+		return imageIdToNeigh;
+	}
+
+
+	private static Map<String, List<Image>> createMapOfBorders(Map<Integer, Image> imageIDToImage) {
+
+		Map<String, List<Image>> borderToImages = new HashMap<>();
+		for (Image image : imageIDToImage.values()) {
+			for (String border : image.allBorders) {
+				borderToImages.putIfAbsent(border, new ArrayList<>());
+				borderToImages.get(border).add(image);
+			}
+		}
+		return borderToImages;
+	}
+
+
+	private static Map<Integer, Image> readInput(List<String> input) {
+
 		Map<Integer, Image> imageIDToImage = new HashMap<>();
 		Image currentImg = null;
 		boolean[][] binImg = new boolean[IMAGE_SIZE][IMAGE_SIZE];
@@ -60,45 +123,7 @@ public class Day20 {
 				currRow++;
 			}
 		}
-
-		Map<String, List<Image>> borderToImages = new HashMap<>();
-		for (Image image : imageIDToImage.values()) {
-			for (String border : image.allBorders) {
-				borderToImages.putIfAbsent(border, new ArrayList<>());
-				borderToImages.get(border).add(image);
-			}
-		}
-
-
-		Map<Integer, Set<Integer>> imageIdToNeigh = new HashMap<>();
-
-		Iterator<Map.Entry<String, List<Image>>> iterator = borderToImages.entrySet().iterator();
-		while (iterator.hasNext()) {
-			Map.Entry<String, List<Image>> next = iterator.next();
-			List<Image> neightbors = next.getValue();
-			if (neightbors.size() == 1) {
-				iterator.remove();
-				continue;
-			}
-
-			if (neightbors.size() != 2) {
-				throw new IllegalArgumentException();
-			}
-
-			imageIdToNeigh.putIfAbsent(neightbors.get(0).imageId, new HashSet<>());
-			imageIdToNeigh.get(neightbors.get(0).imageId).add(neightbors.get(1).imageId);
-			imageIdToNeigh.putIfAbsent(neightbors.get(1).imageId, new HashSet<>());
-			imageIdToNeigh.get(neightbors.get(1).imageId).add(neightbors.get(0).imageId);
-		}
-
-		long result = 1;
-		Iterator<Map.Entry<Integer, Set<Integer>>> imgNeighIter = imageIdToNeigh.entrySet().iterator();
-		while (imgNeighIter.hasNext()) {
-			Map.Entry<Integer, Set<Integer>> next = imgNeighIter.next();
-			if (next.getValue().size() == 2) result *= next.getKey();
-		}
-		Helper.printResultPart1(String.valueOf(result));
-
+		return imageIDToImage;
 	}
 
 
