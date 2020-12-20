@@ -1,7 +1,6 @@
 package days;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,7 +10,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import datastructures.Image;
 import general.Helper;
+import utils.MatrixUtils;
 
 public class Day20 {
 
@@ -34,18 +35,23 @@ public class Day20 {
 		Map<Integer, Set<Integer>> imageIdToNeigh = createMapOfNeighbors(borderToImages);
 
 		resolvePart1(imageIdToNeigh);
+		resolvePart1(imageIDToImage, imageIdToNeigh);
+
+	}
+
+
+	private static void resolvePart1(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh) {
 
 		Image[][] gridOfImages = buildActualGridOfImages(imageIDToImage, imageIdToNeigh);
 		removeBorders(gridOfImages);
 		boolean[][] bigImg = createBigImage(gridOfImages);
 		boolean[][] whaleForm = createWhaleForm();
 
-		int whaleCount = countWhales(bigImg, whaleForm);
+		int whaleCount = findImgOrientationWithWhalesAndGetTheirNumber(bigImg, whaleForm);
 		int numberOfHashtags = countNumberOfHashtags(bigImg);
 		int numberOfHashtagsInAWhale = countNumberOfHashtags(whaleForm);
 
 		Helper.printResultPart2(String.valueOf(numberOfHashtags - numberOfHashtagsInAWhale * whaleCount));
-
 	}
 
 
@@ -61,41 +67,54 @@ public class Day20 {
 	}
 
 
-	private static int countWhales(boolean[][] bigImg, boolean[][] whaleForm) {
+	private static int findImgOrientationWithWhalesAndGetTheirNumber(boolean[][] bigImg, boolean[][] whaleForm) {
 
 		for (int i = 0; i < 11; i++) {
-			int whaleCount = 0;
-
-			for (int r = whaleForm.length; r < bigImg.length; r++) {
-				for (int c = 0; c < bigImg.length - whaleForm[0].length; c++) {
-					boolean isOk = true;
-					for (int rw = whaleForm.length - 1; isOk && rw >= 0; rw--) {
-						for (int cw = 0; isOk && cw < whaleForm[0].length; cw++) {
-							if (!whaleForm[rw][cw]) {
-								continue;
-							}
-							if (whaleForm[rw][cw] && !bigImg[r - ((whaleForm.length - 1) - rw)][c + cw]) {
-								isOk = false;
-								break;
-							}
-						}
-					}
-					if (isOk) {
-						whaleCount++;
-					}
-				}
+			int whaleCount = countWhalesInImg(bigImg, whaleForm);
+			if (whaleCount != 0) {
+				return whaleCount;
 			}
-			if (whaleCount != 0) return whaleCount;
-			bigImg = rotateMatrixToRight(bigImg);
+			bigImg = MatrixUtils.rotateMatrixToRight(bigImg);
 			if (i == 3) {
-				bigImg = flipMatrixLeftRight(bigImg);
+				bigImg = MatrixUtils.flipMatrixLeftRight(bigImg);
 			} else if (i == 7) {
-				bigImg = flipMatrixLeftRight(bigImg);
-				bigImg = flipMatrixLeftRight(bigImg);
+				bigImg = MatrixUtils.flipMatrixLeftRight(bigImg);
+				bigImg = MatrixUtils.flipMatrixLeftRight(bigImg);
 			}
 		}
 
 		throw new RuntimeException("no whale found");
+	}
+
+
+	private static int countWhalesInImg(boolean[][] bigImg, boolean[][] whaleForm) {
+		int whaleCount = 0;
+		for (int r = whaleForm.length; r < bigImg.length; r++) {
+			for (int c = 0; c < bigImg.length - whaleForm[0].length; c++) {
+				if (isWhaleInside(bigImg, whaleForm, r, c)) {
+					whaleCount++;
+				}
+			}
+		}
+		return whaleCount;
+	}
+
+
+	private static boolean isWhaleInside(boolean[][] bigImg, boolean[][] whaleForm, int r, int c) {
+
+		boolean isOk = true;
+		for (int rw = whaleForm.length - 1; isOk && rw >= 0; rw--) {
+			for (int cw = 0; isOk && cw < whaleForm[0].length; cw++) {
+				if (!whaleForm[rw][cw]) {
+					continue;
+				}
+				if (whaleForm[rw][cw] && !bigImg[r - ((whaleForm.length - 1) - rw)][c + cw]) {
+					isOk = false;
+					break;
+				}
+			}
+		}
+		return isOk;
 	}
 
 
@@ -173,43 +192,57 @@ public class Day20 {
 		setBottomAndRightBorder(imageIDToImage, imageIdToNeigh, gridOfImageIds, corners, borders, alreadyPlaced);
 		setRestOfImage(imageIDToImage, imageIdToNeigh, gridOfImageIds, midImage, alreadyPlaced);
 
+		return calcValidGridOfImageIds(numberOfImagesPerRow, gridOfImageIds);
+	}
+
+
+	private static Image[][] calcValidGridOfImageIds(int numberOfImagesPerRow, Image[][] gridOfImageIds) {
+
 		boolean isOk = false;
 		for (int i = 0; i < 11; i++) {
-			Image[][] newThing = new Image[numberOfImagesPerRow][numberOfImagesPerRow];
-			for (int r = 0; r < numberOfImagesPerRow; r++) {
-				for (int c = 0; c < numberOfImagesPerRow; c++) {
-					newThing[c][numberOfImagesPerRow - 1 - r] = gridOfImageIds[r][c];
-				}
-			}
-			gridOfImageIds = newThing;
+			gridOfImageIds = rotateImages(numberOfImagesPerRow, gridOfImageIds);
 			if (i == 3) {
-				Image tmp;
-				for (int r = 0; r < numberOfImagesPerRow * 0.5; r++) {
-					for (int c = 0; c < numberOfImagesPerRow; c++) {
-						tmp = gridOfImageIds[r][c];
-						gridOfImageIds[r][c] = gridOfImageIds[numberOfImagesPerRow - 1 - r][c];
-						gridOfImageIds[numberOfImagesPerRow - 1 - r][c] = tmp;
-					}
-				}
+				flipImages(numberOfImagesPerRow, gridOfImageIds);
 			}
 
-			isOk = tryToFindValidConfig(gridOfImageIds);
+			isOk = findValidImageIdOrdering(gridOfImageIds);
 			if (isOk) {
-				for (int x = 0; x < gridOfImageIds.length; x++) {
-					System.out.println(Arrays.toString(gridOfImageIds[x]));
-				}
 				break;
 			}
 		}
 		if (!isOk) {
 			throw new RuntimeException();
 		}
-
 		return gridOfImageIds;
 	}
 
 
-	private static boolean tryToFindValidConfig(Image[][] gridOfImageIds) {
+	private static Image[][] rotateImages(int numberOfImagesPerRow, Image[][] gridOfImageIds) {
+
+		Image[][] newThing = new Image[numberOfImagesPerRow][numberOfImagesPerRow];
+		for (int r = 0; r < numberOfImagesPerRow; r++) {
+			for (int c = 0; c < numberOfImagesPerRow; c++) {
+				newThing[c][numberOfImagesPerRow - 1 - r] = gridOfImageIds[r][c];
+			}
+		}
+		return newThing;
+	}
+
+
+	private static void flipImages(int numberOfImagesPerRow, Image[][] gridOfImageIds) {
+
+		Image tmp;
+		for (int r = 0; r < numberOfImagesPerRow * 0.5; r++) {
+			for (int c = 0; c < numberOfImagesPerRow; c++) {
+				tmp = gridOfImageIds[r][c];
+				gridOfImageIds[r][c] = gridOfImageIds[numberOfImagesPerRow - 1 - r][c];
+				gridOfImageIds[numberOfImagesPerRow - 1 - r][c] = tmp;
+			}
+		}
+	}
+
+
+	private static boolean findValidImageIdOrdering(Image[][] gridOfImageIds) {
 
 		boolean isOK = false;
 		int i = 0;
@@ -439,43 +472,19 @@ public class Day20 {
 		Map<Integer, Image> imageIDToImage = new HashMap<>();
 		Image currentImg = null;
 		boolean[][] binImg = new boolean[IMAGE_SIZE][IMAGE_SIZE];
-		StringBuilder left = new StringBuilder();
-		StringBuilder right = new StringBuilder();
 		int currRow = 0;
 		for (String line : input) {
 			if (line.isEmpty() && currentImg != null) {
-				currentImg.possibleBorders.add(left.toString());
-				currentImg.possibleBorders.add(left.reverse().toString());
-				currentImg.possibleBorders.add(right.toString());
-				currentImg.possibleBorders.add(right.reverse().toString());
-				right = new StringBuilder();
-				left = new StringBuilder();
 				currentImg.setBinImg(binImg);
-				binImg = new boolean[IMAGE_SIZE][IMAGE_SIZE];
 				imageIDToImage.put(currentImg.imageId, currentImg);
-				currentImg = null;
-				currRow = 0;
 			} else if (line.startsWith("Tile")) {
 				currentImg = new Image(Integer.parseInt(line.substring(5, 9)));
+				binImg = new boolean[IMAGE_SIZE][IMAGE_SIZE];
+				currRow = 0;
 			} else {
-				if (currRow == 0) {
-					currentImg.possibleBorders.add(line);
-					currentImg.possibleBorders.add(new StringBuilder(line).reverse().toString());
-
-				} else if (currRow == IMAGE_SIZE - 1) {
-					currentImg.possibleBorders.add(line);
-					currentImg.possibleBorders.add(new StringBuilder(line).reverse().toString());
-				}
-
 				char[] row = line.toCharArray();
 				for (int i = 0; i < row.length; i++) {
 					binImg[currRow][i] = row[i] == '#';
-					if (i == 0) {
-						left.append(row[i]);
-					}
-					if (i == row.length - 1) {
-						right.append(row[row.length - 1]);
-					}
 				}
 				currRow++;
 			}
@@ -484,151 +493,4 @@ public class Day20 {
 		return imageIDToImage;
 	}
 
-
-	public static boolean[][] rotateMatrixToRight(boolean[][] matrix) {
-
-		boolean[][] newThing = new boolean[matrix[0].length][matrix.length];
-		for (int r = 0; r < matrix.length; r++) {
-			for (int c = 0; c < matrix[0].length; c++) {
-				newThing[c][matrix.length - 1 - r] = matrix[r][c];
-			}
-		}
-		return newThing;
-	}
-
-
-	public static boolean[][] flipMatrixLeftRight(boolean[][] matrix) {
-
-		boolean[][] newThing = new boolean[matrix.length][matrix[0].length];
-		for (int r = 0; r < matrix.length * 0.5; r++) {
-			for (int c = 0; c < matrix[0].length; c++) {
-				newThing[r][c] = matrix[matrix.length - 1 - r][c];
-				newThing[matrix.length - 1 - r][c] = matrix[r][c];
-			}
-		}
-		return newThing;
-	}
-
-
-	private static class Image {
-
-		int imageId;
-		boolean[][] binImg;
-		boolean[][] binImgOrig;
-		String[] borders;
-
-		Set<String> possibleBorders = new HashSet<>();
-
-
-		public Image(int imageId) {
-
-			this.imageId = imageId;
-		}
-
-
-		@Override
-		public String toString() {
-
-			return String.valueOf(imageId);
-		}
-
-
-		public void flipLeftRight() {
-
-			binImg = flipMatrixLeftRight(binImg);
-			updateBorders();
-		}
-
-
-		public void rotate90ToRight() {
-
-			binImg = rotateMatrixToRight(binImg);
-			updateBorders();
-		}
-
-
-		public void removeRow(int row) {
-
-			boolean[][] newImg = new boolean[binImg.length - 1][binImg[0].length];
-			int delta = 0;
-			for (int r = 0; r < binImg.length; r++) {
-				for (int c = 0; c < binImg.length; c++) {
-					if (r == row) {
-						delta = 1;
-						continue;
-					}
-					newImg[r - delta][c] = binImg[r][c];
-				}
-			}
-			binImg = newImg;
-		}
-
-
-		public void removeCol(int col) {
-
-			boolean[][] newImg = new boolean[binImg.length][binImg[0].length - 1];
-			int delta = 0;
-			for (int r = 0; r < binImg.length; r++) {
-				delta = 0;
-				for (int c = 0; c < binImg[0].length; c++) {
-					if (c == col) {
-						delta = 1;
-						continue;
-					}
-					newImg[r][c - delta] = binImg[r][c];
-				}
-			}
-			binImg = newImg;
-		}
-
-
-		private void updateBorders() {
-
-			StringBuilder left = new StringBuilder();
-			StringBuilder right = new StringBuilder();
-			StringBuilder top = new StringBuilder();
-			StringBuilder bottom = new StringBuilder();
-			String[] currentSetting;
-			for (int r = 0; r < IMAGE_SIZE; r++) {
-				for (int c = 0; c < IMAGE_SIZE; c++) {
-					if (r == 0) {
-						top.append(binImg[r][c] ? '#' : '.');
-					}
-					if (r == IMAGE_SIZE - 1) {
-						bottom.append(binImg[r][c] ? '#' : '.');
-					}
-					if (c == 0) {
-						left.append(binImg[r][c] ? '#' : '.');
-					}
-					if (c == IMAGE_SIZE - 1) {
-						right.append(binImg[r][c] ? '#' : '.');
-					}
-				}
-			}
-			borders = new String[] { top.toString(), right.toString(), bottom.toString(), left.toString() };
-		}
-
-
-		public void reset() {
-
-			for (int r = 0; r < IMAGE_SIZE; r++) {
-				for (int c = 0; c < IMAGE_SIZE; c++) {
-					binImg[r][c] = binImgOrig[r][c];
-				}
-			}
-		}
-
-
-		public void setBinImg(boolean[][] binImg) {
-
-			this.binImg = binImg;
-			binImgOrig = new boolean[IMAGE_SIZE][IMAGE_SIZE];
-			for (int r = 0; r < IMAGE_SIZE; r++) {
-				for (int c = 0; c < IMAGE_SIZE; c++) {
-					binImgOrig[r][c] = binImg[r][c];
-				}
-			}
-			updateBorders();
-		}
-	}
 }
