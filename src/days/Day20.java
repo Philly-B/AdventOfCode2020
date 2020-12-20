@@ -4,13 +4,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
-import datastructures.IntPair;
 import general.Helper;
 
 public class Day20 {
@@ -24,25 +23,58 @@ public class Day20 {
 		input.add("");
 
 		Map<Integer, Image> imageIDToImage = readInput(input);
-
 		Map<String, List<Image>> borderToImages = createMapOfBorders(imageIDToImage);
-
 		Map<Integer, Set<Integer>> imageIdToNeigh = createMapOfNeighbors(borderToImages);
 
 		resolvePart1(imageIdToNeigh);
 
+		Image[][] gridOfImageIds = buildActualGridOfImages(imageIDToImage, imageIdToNeigh);
+
+
+		// todo build grid
+		// todo find rotation that fits
+		// todo remove all borders
+		// create one big image
+		// count monsters contained -> result = number of hashtags - (number of monsters * hashtags in monsters)
+	}
+
+
+	private static Image[][] buildActualGridOfImages(Map<Integer, Image> imageIDToImage, Map<Integer, Set<Integer>> imageIdToNeigh) {
+
+		int numberOfImagesPerRow = (int) Math.sqrt(imageIDToImage.size());
+		Image[][] gridOfImageIds  = new Image[numberOfImagesPerRow][numberOfImagesPerRow];
+
+		long[] corners = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 2).toArray();
+		List<Long> borders = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 3).boxed().collect(Collectors.toList());
+		List<Long> midImage = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 4).boxed().collect(Collectors.toList());
+
+		gridOfImageIds[0][0] = imageIDToImage.get(corners[0]);
+		gridOfImageIds[0][IMAGE_SIZE-1] = imageIDToImage.get(corners[1]);
+		gridOfImageIds[IMAGE_SIZE-1][0] = imageIDToImage.get(corners[2]);
+		gridOfImageIds[IMAGE_SIZE-1][IMAGE_SIZE-1] = imageIDToImage.get(corners[3]);
+		return gridOfImageIds;
 	}
 
 
 	private static void resolvePart1(Map<Integer, Set<Integer>> imageIdToNeigh) {
 
-		long result = 1;
-		Iterator<Map.Entry<Integer, Set<Integer>>> imgNeighIter = imageIdToNeigh.entrySet().iterator();
-		while (imgNeighIter.hasNext()) {
-			Map.Entry<Integer, Set<Integer>> next = imgNeighIter.next();
-			if (next.getValue().size() == 2) result *= next.getKey();
-		}
+		long result = getAllImagesWithNumberOfNeigh(imageIdToNeigh, 2)
+				.reduce(1, (l1,l2) -> l1 * l2);
+
+
 		Helper.printResultPart1(String.valueOf(result));
+	}
+
+
+	private static LongStream getAllImagesWithNumberOfNeigh(
+			Map<Integer, Set<Integer>> imageIdToNeigh,
+			int numberOfNeigh) {
+
+		return imageIdToNeigh
+				.entrySet()
+				.stream()
+				.filter(entry -> entry.getValue().size() == numberOfNeigh)
+				.mapToLong(Map.Entry::getKey);
 	}
 
 
@@ -133,11 +165,52 @@ public class Day20 {
 		private boolean[][] binImg;
 		Set<String> allBorders = new HashSet<>();
 
-
 		public Image(int imageId, boolean[][] binImg) {
 
 			this.imageId = imageId;
 			this.binImg = binImg;
+		}
+
+		public void flipLeftRight() {
+			boolean tmp;
+			for (int r=0; r < IMAGE_SIZE; r++) {
+				for (int c=0; c < IMAGE_SIZE; c++) {
+					tmp = binImg[r][c];
+					binImg[r][c] = binImg[r][IMAGE_SIZE - 1 - c];
+					binImg[r][IMAGE_SIZE - 1 - c] = tmp;
+				}
+			}
+		}
+
+		public void flipTopBottom() {
+			boolean tmp;
+			for (int r=0; r < IMAGE_SIZE; r++) {
+				for (int c=0; c < IMAGE_SIZE; c++) {
+					tmp = binImg[r][c];
+					binImg[r][c] = binImg[IMAGE_SIZE - 1 - r][c];
+					binImg[IMAGE_SIZE - 1 - r][c] = tmp;
+				}
+			}
+		}
+
+		public void rotate90ToRight() {
+			boolean[][] newThing = new boolean[IMAGE_SIZE][IMAGE_SIZE];
+			for (int r=0; r < IMAGE_SIZE; r++) {
+				for (int c = 0; c < IMAGE_SIZE; c++) {
+					newThing[c][IMAGE_SIZE-1-r] = binImg[r][c];
+				}
+			}
+			binImg = newThing;
+		}
+
+		public void removeBorders() {
+			boolean[][] newImg = new boolean[IMAGE_SIZE-2][IMAGE_SIZE-2];
+			for (int r=1; r < IMAGE_SIZE-1; r++) {
+				for (int c = 1; c < IMAGE_SIZE-1; c++) {
+					newImg[r-1][c-1] = binImg[r][c];
+				}
+			}
+			binImg = newImg;
 		}
 
 	}
