@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import com.sun.org.apache.xpath.internal.objects.XNumber;
-
 import general.Helper;
 
 public class Day06 {
