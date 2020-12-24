@@ -4,44 +4,54 @@ import java.util.Objects;
 
 public class IntPair {
 
-		public int first, second;
+    public int first, second;
 
 
-		public IntPair(int first, int second) {
+    public IntPair(int first, int second) {
 
-			this.first = first;
-			this.second = second;
-		}
+        this.first = first;
+        this.second = second;
+    }
 
-
-	@Override
-	public boolean equals(Object o) {
-
-		if (this == o) {
-			return true;
-		}
-		if (o == null || getClass() != o.getClass()) {
-			return false;
-		}
-		IntPair intPair = (IntPair) o;
-		return first == intPair.first &&
-				second == intPair.second;
-	}
+    public IntPair(IntPair toCopy) {
+        first = toCopy.first;
+        second = toCopy.second;
+    }
 
 
-	@Override
-	public int hashCode() {
+    @Override
+    public boolean equals(Object o) {
 
-		return Objects.hash(first, second);
-	}
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        IntPair intPair = (IntPair) o;
+        return first == intPair.first &&
+                second == intPair.second;
+    }
 
 
-	@Override
-	public String toString() {
+    @Override
+    public int hashCode() {
 
-		return "IntPair{" +
-				"first=" + first +
-				", second=" + second +
-				'}';
-	}
+        return Objects.hash(first, second);
+    }
+
+
+    @Override
+    public String toString() {
+
+        return "IntPair{" +
+                "first=" + first +
+                ", second=" + second +
+                '}';
+    }
+
+    public void addDelta(int firstDelta, int secondDelta) {
+        first += firstDelta;
+        second += secondDelta;
+    }
 }
